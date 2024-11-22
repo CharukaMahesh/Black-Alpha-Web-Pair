@@ -1,8 +1,8 @@
 const express = require('express');
+const session = require('express-session');
+const bodyParser = require("body-parser");
 const app = express();
 __path = process.cwd();
-const bodyParser = require("body-parser");
-const session = require('express-session');  // Required for session management
 const PORT = process.env.PORT || 8000;
 
 let code = require('./pair');
@@ -20,17 +20,28 @@ app.use(session({
 app.use('/code', code);
 
 app.use('/', async (req, res, next) => {
-    // Initialize session ID with 'black-alpha' prefix if not set
-    if (!req.session.userID) {
-        req.session.userID = 'black-alpha-' + Math.random().toString(36).substring(2, 15); // Generate unique session ID
+    try {
+        // Initialize session ID with 'black-alpha' prefix if not set
+        if (!req.session.userID) {
+            req.session.userID = 'black-alpha-' + Math.random().toString(36).substring(2, 15); // Generate unique session ID
+        }
+        console.log(`Session ID: ${req.session.userID}`);
+        res.sendFile(__path + '/pair.html');
+    } catch (error) {
+        next(error); // Pass error to error handler
     }
-    console.log(`Session ID: ${req.session.userID}`);
-    res.sendFile(__path + '/pair.html');
 });
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Basic error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error occurred:', err);  // Log error
+    res.status(500).send('Internal Server Error'); // Send a generic error response
+});
+
+// Start server
 app.listen(PORT, () => {
     console.log(`⏩ Server running on http://localhost:` + PORT);
 });
